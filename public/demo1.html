@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics Demo 1</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 20px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    button { padding: 10px 14px; font-size: 14px; }
+    a { color: #06c; }
+  </style>
+</head>
+<body>
+  <h1>Demo Page 1</h1>
+  <p><a href="/">Open Dashboard</a></p>
+  <p>This page uses declarative attributes to emit analytics events.</p>
+
+  <div class="grid">
+    <button data-analytics="purchase" data-analytics-props="plan=pro;currency=USD" data-analytics-on="click">Buy Pro</button>
+    <button data-analytics="purchase" data-analytics-props="plan=basic;currency=USD" data-analytics-on="click">Buy Basic</button>
+    <button data-analytics="cta_clicked" data-analytics-props="section=hero" data-analytics-on="click">CTA in Hero</button>
+    <a href="#" data-analytics="link_clicked" data-analytics-props="target=learn_more" data-analytics-on="click">Learn more</a>
+  </div>
+
+  <script src="/dist/analytics.js"></script>
+  <script>
+    const analytics = window.AnalyticsSDK && window.AnalyticsSDK.create({
+      appId: 'demo-app-1',
+      endpoint: '/events',
+      batchEndpoint: '/events/batch',
+      maxPerSecond: 50
+    })
+    if (analytics) {
+      analytics.track('demo_loaded', { page: 'demo1' })
+    }
+  </script>
+</body>
+</html>

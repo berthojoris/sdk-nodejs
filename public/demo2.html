@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics Demo 2</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 20px; }
+    input, button { padding: 8px 10px; font-size: 14px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+  </style>
+</head>
+<body>
+  <h1>Demo Page 2</h1>
+  <p><a href="/">Open Dashboard</a></p>
+  <p>This page mixes declarative and manual tracking.</p>
+
+  <div class="row">
+    <input id="search" placeholder="Type to track input" data-analytics="search" data-analytics-on="input" />
+    <button id="signup">Manual Track: Signup Clicked</button>
+  </div>
+
+  <script src="/dist/analytics.js"></script>
+  <script>
+    const analytics = window.AnalyticsSDK && window.AnalyticsSDK.create({
+      appId: 'demo-app-2',
+      endpoint: '/events',
+      batchEndpoint: '/events/batch',
+      maxPerSecond: 50
+    })
+    if (analytics) {
+      document.getElementById('signup').onclick = () => {
+        analytics.track('signup_clicked', { plan: 'pro' })
+      }
+      analytics.track('demo_loaded', { page: 'demo2' })
+    }
+  </script>
+</body>
+</html>

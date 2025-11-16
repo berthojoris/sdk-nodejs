@@ -1,5 +1,7 @@
 const http = require('http')
 const url = require('url')
+const fs = require('fs')
+const path = require('path')
 const { WebSocketServer } = require('ws')
 const { v4: uuidv4 } = require('uuid')
 const Storage = require('./storage')
@@ -33,18 +35,44 @@ function isIpAllowed(ip) {
   return ALLOWED_IPS.includes(n)
 }
 
-function isOriginAllowed(origin) {
+function isOriginAllowed(origin, host) {
   if (ALLOWED_ORIGINS.length === 0) return true
   if (!origin) return true
-  return ALLOWED_ORIGINS.includes(origin)
+  if (ALLOWED_ORIGINS.includes(origin)) return true
+  if (host && typeof origin === 'string' && origin.includes(host)) return true
+  return false
 }
 
-function applyCors(res, origin) {
+function applyCors(res, origin, host) {
   const allowAll = ALLOWED_ORIGINS.length === 0
-  const okOrigin = allowAll ? '*' : (origin && ALLOWED_ORIGINS.includes(origin) ? origin : 'null')
+  let okOrigin = '*'
+  if (!allowAll) {
+    if (origin && (ALLOWED_ORIGINS.includes(origin) || (host && origin.includes(host)))) okOrigin = origin
+    else okOrigin = 'null'
+  }
   res.setHeader('Access-Control-Allow-Origin', okOrigin)
   res.setHeader('Access-Control-Allow-Methods', CORS_METHODS)
   res.setHeader('Access-Control-Allow-Headers', CORS_HEADERS)
+}
+
+function contentTypeFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase()
+  if (ext === '.html') return 'text/html; charset=utf-8'
+  if (ext === '.js') return 'application/javascript'
+  if (ext === '.css') return 'text/css'
+  if (ext === '.json') return 'application/json'
+  if (ext === '.png') return 'image/png'
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
+  if (ext === '.svg') return 'image/svg+xml'
+  return 'application/octet-stream'
+}
+
+function serveFile(res, filePath) {
+  fs.readFile(filePath, (err, data) => {
+    if (err) { res.writeHead(404); res.end(JSON.stringify({ error: 'not_found' })); return }
+    res.writeHead(200, { 'Content-Type': contentTypeFor(filePath) })
+    res.end(data)
+  })
 }
 
 const subscribers = new Set()
@@ -74,11 +102,38 @@ const server = http.createServer(async (req, res) => {
   const parsed = url.parse(req.url, true)
   const method = req.method || 'GET'
   const origin = req.headers && req.headers.origin
+  const host = req.headers && req.headers.host
   const ip = getClientIp(req)
   if (!isIpAllowed(ip)) { res.writeHead(403); res.end(JSON.stringify({ error: 'ip_not_allowed' })); return }
-  if (!isOriginAllowed(origin)) { res.writeHead(403); res.end(JSON.stringify({ error: 'origin_not_allowed' })); return }
-  applyCors(res, origin)
+  if (!isOriginAllowed(origin, host)) { res.writeHead(403); res.end(JSON.stringify({ error: 'origin_not_allowed' })); return }
+  applyCors(res, origin, host)
   if (method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+  if (method === 'GET' && (parsed.pathname === '/' || parsed.pathname === '/dashboard')) {
+    const fp = path.join(process.cwd(), 'public', 'dashboard.html')
+    serveFile(res, fp)
+    return
+  }
+  if (method === 'GET' && parsed.pathname === '/demo/1') {
+    const fp = path.join(process.cwd(), 'public', 'demo1.html')
+    serveFile(res, fp)
+    return
+  }
+  if (method === 'GET' && parsed.pathname === '/demo/2') {
+    const fp = path.join(process.cwd(), 'public', 'demo2.html')
+    serveFile(res, fp)
+    return
+  }
+  if (method === 'GET' && parsed.pathname.startsWith('/public/')) {
+    const rel = parsed.pathname.slice('/public/'.length)
+    const fp = path.join(process.cwd(), 'public', rel)
+    serveFile(res, fp)
+    return
+  }
+  if (method === 'GET' && parsed.pathname === '/dist/analytics.js') {
+    const fp = path.join(process.cwd(), 'dist', 'analytics.js')
+    serveFile(res, fp)
+    return
+  }
   if (method === 'POST' && parsed.pathname === '/events') {
     try {
       const body = await parseBody(req)
@@ -127,9 +182,10 @@ server.on('upgrade', (req, socket, head) => {
   const { pathname } = url.parse(req.url)
   if (pathname === '/ws') {
     const origin = req.headers && req.headers.origin
+    const host = req.headers && req.headers.host
     const ip = getClientIp(req)
     if (!isIpAllowed(ip)) { socket.destroy(); return }
-    if (!isOriginAllowed(origin)) { socket.destroy(); return }
+    if (!isOriginAllowed(origin, host)) { socket.destroy(); return }
     wss.handleUpgrade(req, socket, head, ws => { wss.emit('connection', ws, req) })
   } else { socket.destroy() }
 })

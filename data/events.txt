@@ -1,3 +1,4 @@
 ts=1763304642289 appId=plain-app id=72f74712-1a59-4e4d-8ebe-14e8c52d247f type=custom name=pt_event userId= sessionId= payload={"msg":"hello"}
 ts=1763305018155 appId=test-app id=de847d26-f373-4c0c-96cb-cb7d43a5a893 type= name= userId= sessionId= payload={"id":"de847d26-f373-4c0c-96cb-cb7d43a5a893","appId":"test-app","ts":1763305018155,"event":"signup","user":"u1"}
 ts=1763305039624 appId=test-app id=fe0d246d-c5ff-4bc4-96e1-6d5006c22aef type= name= userId= sessionId= payload={"id":"fe0d246d-c5ff-4bc4-96e1-6d5006c22aef","appId":"test-app","ts":1763305039624,"event":"server-call","user":"u3"}
+ts=1763305476004 appId=demo-app-1 id=548775e0-e00e-401d-ad12-ff3be468f2e2 type=manual_test name= userId= sessionId= payload={"hello":"world"}

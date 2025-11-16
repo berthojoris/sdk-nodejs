@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics Dashboard</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 20px; }
+    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    input, select, button { padding: 6px 10px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; vertical-align: top; }
+    th { background: #f5f5f5; text-align: left; }
+    .live { margin-left: auto; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; background: #eef; font-size: 12px; }
+    .links { margin-top: 8px; }
+    .links a { margin-right: 12px; }
+    .small { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Analytics Dashboard</h1>
+  <header>
+    <label>App ID <input id="appId" value="demo-app-1" /></label>
+    <label>Limit <input id="limit" type="number" value="200" min="1" /></label>
+    <button id="load">Load</button>
+    <span class="live"><span id="liveStatus" class="badge">Live: off</span> <button id="toggleLive">Toggle Live</button></span>
+  </header>
+  <div class="links">
+    <a href="/demo/1">Demo page 1</a>
+    <a href="/demo/2">Demo page 2</a>
+    <span class="small">Include <code>/dist/analytics.js</code> on demo pages</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>ts</th>
+        <th>appId</th>
+        <th>type/name</th>
+        <th>payload</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <script>
+    const rowsEl = document.getElementById('rows')
+    const appIdEl = document.getElementById('appId')
+    const limitEl = document.getElementById('limit')
+    const loadBtn = document.getElementById('load')
+    const toggleLiveBtn = document.getElementById('toggleLive')
+    const liveStatus = document.getElementById('liveStatus')
+    let ws = null
+    let live = false
+
+    function fmtTs(ts) { try { return new Date(Number(ts)).toISOString() } catch (e) { return String(ts) } }
+    function addRow(ev) {
+      const tr = document.createElement('tr')
+      const tType = ev.type || ev.name || ''
+      const payload = ev.payload ? JSON.stringify(ev.payload) : ''
+      tr.innerHTML = `<td>${fmtTs(ev.ts)}</td><td>${ev.appId || ''}</td><td>${tType}</td><td>${payload}</td>`
+      rowsEl.prepend(tr)
+      const max = Number(limitEl.value) || 200
+      while (rowsEl.children.length > max) rowsEl.removeChild(rowsEl.lastChild)
+    }
+
+    async function load() {
+      const appId = appIdEl.value.trim()
+      const limit = Number(limitEl.value) || 200
+      const q = new URLSearchParams({ appId, limit: String(limit) })
+      const res = await fetch(`/events?${q.toString()}`)
+      const json = await res.json().catch(() => ({ events: [] }))
+      rowsEl.innerHTML = ''
+      const list = (json && json.events) || []
+      for (let i = 0; i < list.length; i++) addRow(list[i])
+    }
+
+    function connectLive() {
+      if (ws) { try { ws.close() } catch (e) {} ws = null }
+      live = true
+      liveStatus.textContent = 'Live: on'
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+      ws = new WebSocket(`${proto}://${location.host}/ws`)
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data)
+          if (data && data.type === 'event' && data.data) {
+            const ev = data.data
+            const selected = appIdEl.value.trim()
+            if (!selected || ev.appId === selected) addRow(ev)
+          }
+        } catch (e) {}
+      }
+      ws.onclose = () => { if (live) setTimeout(connectLive, 1000) }
+    }
+
+    function disconnectLive() {
+      live = false
+      liveStatus.textContent = 'Live: off'
+      if (ws) { try { ws.close() } catch (e) {} ws = null }
+    }
+
+    loadBtn.onclick = load
+    toggleLiveBtn.onclick = () => { if (live) disconnectLive(); else connectLive() }
+    load()
+  </script>
+</body>
+</html>
