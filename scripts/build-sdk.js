@@ -1,0 +1,8 @@
+const fs = require('fs')
+const path = require('path')
+const src = path.join(process.cwd(),'sdk','analytics.js')
+const distDir = path.join(process.cwd(),'dist')
+const dist = path.join(distDir,'analytics.js')
+if(!fs.existsSync(distDir)) fs.mkdirSync(distDir,{recursive:true})
+const code = fs.readFileSync(src,'utf8')
+fs.writeFileSync(dist,code)

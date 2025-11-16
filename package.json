@@ -1,0 +1,15 @@
+{
+  "name": "realtime-analytics-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "build-sdk": "node scripts/build-sdk.js"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1",
+    "ws": "^8.18.0"
+  }
+}
