@@ -1,7 +1,7 @@
 # Database Adapters & Configuration
 
 ## Selection
-- Set `DB_TYPE` to one of: `file`, `mysql`, `postgres`, `sqlite`, `mongo`
+- Set `DB_TYPE` to one of: `file`, `plaintext`, `mysql`, `postgres`, `sqlite`, `mongo`
 
 ## Drivers
 - Install only the driver you need:
@@ -24,6 +24,8 @@
 - SQLite: table `events (id TEXT PK, appId TEXT, ts INTEGER, name TEXT, type TEXT, payload TEXT)`
 - MongoDB: collection `events` with index `{ appId: 1, ts: -1 }`
 - File: newline-delimited JSON at `data/events.jsonl`
+- Plain Text: key-value lines at `data/events.txt`:
+  - Format: `ts=<ts> appId=<appId> id=<id> type=<type> name=<name> userId=<userId> sessionId=<sessionId> payload=<json>`
 
 ## Indexing
 - Recommended: index on `(appId, ts DESC)` for query performance
@@ -32,6 +34,9 @@
 ```
 # File
 DB_TYPE=file
+
+# Plain Text
+DB_TYPE=plaintext
 
 # PostgreSQL
 DB_TYPE=postgres

@@ -21,7 +21,7 @@ A JavaScript-based tracking SDK and Node.js server for real-time user interactio
   - MongoDB: `npm install mongodb`
 - Build SDK bundle: `npm run build-sdk`
 - Configure environment:
-  - `DB_TYPE=file|mysql|postgres|sqlite|mongo`
+  - `DB_TYPE=file|plaintext|mysql|postgres|sqlite|mongo`
   - `DATABASE_URL` for mysql/postgres/mongo
   - `MONGO_DB` for mongo (default `analytics`)
   - `PORT` (default `3000`)
